@@ -1,124 +1,489 @@
 # FHIR Inspector MCP
 
-A zero-cost, local-first Model Context Protocol (MCP) server for inspecting, validating, and generating FHIR R4/R5 resources without external API dependencies.
+A production-ready Model Context Protocol (MCP) server for inspecting, validating, and generating FHIR resources. Supports FHIR R4 and R5 specifications with zero external dependencies at runtime.
 
-## ✨ Features
-- **Inspect Resource**: Parse and display FHIR resource structure, elements, and metadata.
-- **Validate Resource**: Structural validation against R4/R5 profiles using Pydantic v2.
-- **Summarize Bundle**: Analyze FHIR bundles (transaction, searchset, document) for statistics.
-- **Generate Example**: Create valid FHIR resource examples for any resource type via introspection.
-- **Zero-Cost & Local**: Runs entirely locally via stdio, no external API calls at runtime.
+## Features
 
-## 🛠️ Prerequisites
-- Python 3.12+
-- `fastmcp` v4.1.6
-- `fhir.resources` v8.3.0
-- `pydantic` v2
-- `pytest` and `pytest-cov` for testing
+- **inspect_resource** — Parse and display FHIR resource structure, elements, types, cardinalities, and references
+- **validate_resource** — Validate FHIR resources against R4/R5 profiles with detailed error reporting and JSON paths
+- **summarize_bundle** — Analyze FHIR bundles (transaction, searchset, document, batch, etc.) with statistics and reference graphs
+- **generate_example** — Create valid FHIR resource examples for any resource type with optional overrides
 
-## 🚀 Installation
-1. Clone the repository.
-2. Activate the virtual environment: `venv/Scripts/activate.bat` (or equivalent).
-3. Install dependencies: `pip install -e .[dev]`
+## Installation Methods
 
-## ⚙️ Configuration
-This tool is designed to be **zero-configuration** at runtime, relying on the `version` parameter ('R4' or 'R5') passed to the MCP tool calls.
-- **FHIR Version**: Explicitly set in tool calls (e.g., `version='R4'`). Defaults to 'R4' if omitted, which emits a `W_VERSION_ASSUMED` warning.
-- **Payload Limits**: Hardcoded guardrails are enforced: 10MB payload size, max depth 50, max bundle entries 10,000.
+| Method | Description |
+|--------|-------------|
+| **uvx (Recommended)** | Run directly with automatic updates via `uvx fhir-inspector-mcp@latest` |
+| **pipx** | Install as isolated CLI tool with `pipx install fhir-inspector-mcp` |
+| **Docker** | Run in container with `docker run -i ghcr.io/cytocync/fhir-inspector-mcp:latest` |
+| **From Source** | Clone and install for development with `uv sync` |
 
-## 💡 Usage
-Run the server via the CLI:
-`python -m fhir_inspector_mcp`
+### Quick Start with uvx (Recommended)
 
-The server listens via stdio and exposes the following tools:
-- `inspect_resource(resource: str, version: str | None = None, max_depth: int = 5, include_types: bool = True)`
-- `validate_resource(resource: str, version: str | None = None)`
-- `summarize_bundle(bundle: str, version: str | None = None, include_references: bool = True, max_entries: int = 10000)`
-- `generate_example(resource_type: str, version: str | None = None, overrides: dict | None = None)`
+Add to your MCP client's `mcpServers` configuration:
 
-**Example (Validation):**
-```bash
-# Assuming you have a valid FHIR JSON string in $FHIR_JSON
-python -m fhir_inspector_mcp --tool validate_resource --resource "$FHIR_JSON" --version "R4"
+```json
+{
+  "mcpServers": {
+    "fhir-inspector-mcp": {
+      "command": "uvx",
+      "args": ["fhir-inspector-mcp@latest"],
+      "env": {
+        "UV_HTTP_TIMEOUT": "300"
+      }
+    }
+  }
+}
 ```
 
-## 🧑‍💻 Development
-- **Testing**: Run tests with `pytest --cov --cov-fail-under=90`. Full core logic coverage target is 100%.
-- **Linting**: Use `ruff check` and `mypy` (scoped to `src/`). Pre-commit hooks enforce formatting and linting.
-- **CI**: CI pipeline (`.github/workflows/ci.yml`) runs tests, coverage checks, and `pip-audit` (S-12/S-13).
+The `@latest` tag enables automatic updates. The server starts instantly with no browser or authentication required — it's a pure Python stdio server.
 
-## 🤝 Contributing
-See `CONTRIBUTING.md` for guidelines. All contributions must adhere to the **zero-PHI policy** (S-15) and use synthetic data only.
+---
 
-## 📜 License
-MIT License.
-
-## 🔗 API Documentation
-Detailed tool specifications, parameters, and return envelopes are documented in `docs/tools/` (e.g., `docs/tools/inspect_resource.md`).
-
-## 🤖 Connecting as an MCP Client
+## Client-Specific Setup
 
 ### Claude Desktop
-Add the server to your Claude Desktop MCP configuration:
+
+**Option 1: MCP Settings File**
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
-{ "mcpServers": { "fhir-inspector": { "command": "uvx", "args": ["fhir-inspector-mcp@latest"], "env": {} } } }
+{
+  "mcpServers": {
+    "fhir-inspector-mcp": {
+      "command": "uvx",
+      "args": ["fhir-inspector-mcp@latest"]
+    }
+  }
+}
 ```
 
-Or run from source:
-
-```json
-{ "mcpServers": { "fhir-inspector": { "command": "python", "args": ["-m", "fhir_inspector_mcp"], "cwd": "/path/to/fhir-inspector-mcp" } } }
-```
-
-### Cursor IDE
-1. Open Cursor Settings → Extensions → MCP Servers
-2. Add a new MCP server:
-   - **Name**: `fhir-inspector`
-   - **Command**: `uvx` (or `python -m fhir_inspector_mcp`)
-   - **Args**: `["fhir-inspector-mcp@latest"]`
-
-### Windsurf
-Add to your `windsurf.json` or MCP configuration:
-
-```json
-{ "mcpServers": { "fhir-inspector": { "command": "uvx", "args": ["fhir-inspector-mcp@latest"] } } }
-```
-
-### Manual Testing
-You can test the server manually using the MCP CLI or by piping JSON-RPC requests:
+**Option 2: Using pipx**
 
 ```bash
-# Start the server
-python -m fhir_inspector_mcp
-
-# In another terminal, send a test request
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | python -m fhir_inspector_mcp
+pipx install fhir-inspector-mcp
 ```
 
-### Example Tool Usage
-Once connected, you can use the tools in your prompts:
+Then configure:
 
-**Validate a FHIR Patient resource:**
-```
-validate_resource with resource='{"resourceType":"Patient","name":[{"family":"Smith","given":["John"]}]}' and version='R4'
-```
-
-**Generate a Patient example:**
-```
-generate_example with resource_type='Patient' and version='R4'
-```
-
-**Inspect a FHIR Bundle:**
-```
-inspect_resource with resource='{"resourceType":"Bundle","type":"searchset","entry":[]}' and version='R4'
+```json
+{
+  "mcpServers": {
+    "fhir-inspector-mcp": {
+      "command": "fhir-inspector-mcp"
+    }
+  }
+}
 ```
 
-**Summarize a Bundle:**
-```
-summarize_bundle with bundle='{"resourceType":"Bundle","type":"transaction","entry":[]}' and version='R4'
+Restart Claude Desktop after editing the config.
+
+### Cursor
+
+**Via Cursor Settings (UI)**
+
+1. Open Cursor Settings → MCP → Add new MCP server
+2. Name: `fhir-inspector-mcp`
+3. Command: `uvx`
+4. Args: `fhir-inspector-mcp@latest`
+
+**Via `.cursor/mcp.json`**
+
+```json
+{
+  "mcpServers": {
+    "fhir-inspector-mcp": {
+      "command": "uvx",
+      "args": ["fhir-inspector-mcp@latest"]
+    }
+  }
+}
 ```
 
-> **Note**: Resource payloads are passed as JSON strings. The server validates all inputs and returns structured error messages for invalid data.
-Detailed tool specifications, parameters, and return envelopes are documented in `docs/tools/` (e.g., `docs/tools/inspect_resource.md`).
-# FHIR Inspector MCP 
+### VS Code (with MCP Extension)
+
+Add to `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "fhir-inspector-mcp": {
+      "command": "uvx",
+      "args": ["fhir-inspector-mcp@latest"]
+    }
+  }
+}
+```
+
+### Continue.dev
+
+Add to `~/.continue/config.json`:
+
+```json
+{
+  "mcpServers": {
+    "fhir-inspector-mcp": {
+      "command": "uvx",
+      "args": ["fhir-inspector-mcp@latest"]
+    }
+  }
+}
+```
+
+### Codex (OpenAI)
+
+```bash
+codex plugin marketplace add cytocync/fhir-inspector-mcp
+codex plugin add fhir-inspector-mcp@fhir-inspector-mcp
+```
+
+### Claude Code
+
+```bash
+claude plugin marketplace add cytocync/fhir-inspector-mcp
+claude plugin install fhir-inspector-mcp@fhir-inspector-mcp
+```
+
+### Docker
+
+```json
+{
+  "mcpServers": {
+    "fhir-inspector-mcp": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "ghcr.io/cytocync/fhir-inspector-mcp:latest"]
+    }
+  }
+}
+```
+
+Or run directly:
+
+```bash
+docker run -i --rm ghcr.io/cytocync/fhir-inspector-mcp:latest
+```
+
+---
+
+## Tool Reference
+
+### inspect_resource
+
+Parse and display FHIR resource structure with element tree, types, cardinalities, and references.
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `resource` | string | required | FHIR resource as JSON string |
+| `version` | string | `"R4"` | FHIR version: `"R4"` or `"R5"` |
+| `max_depth` | integer | `5` | Maximum depth for element tree (1-10) |
+| `include_types` | boolean | `true` | Include FHIR type metadata in output |
+
+**Example:**
+
+```json
+{
+  "resource": "{"resourceType": "Patient", "id": "example", "name": [{"family": "Doe", "given": ["John"]}]}",
+  "version": "R4",
+  "max_depth": 3
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "resource_type": "Patient",
+    "fhir_version": "R4",
+    "element_tree": [
+      {"path": "Patient.id", "type": "id", "required": false, "repeated": false},
+      {"path": "Patient.name", "type": "HumanName", "required": false, "repeated": true},
+      {"path": "Patient.name[0].family", "type": "string", "required": true, "repeated": false},
+      {"path": "Patient.name[0].given", "type": "string", "required": false, "repeated": true}
+    ],
+    "references": [],
+    "contained": [],
+    "summary": {"total_elements": 4, "depth_reached": 2}
+  },
+  "issues": [],
+  "meta": {
+    "fhir_version": "R4",
+    "resource_type": "Patient",
+    "duration_ms": 12.4,
+    "truncated": false
+  }
+}
+```
+
+### validate_resource
+
+Validate FHIR resources against R4/R5 structural profiles with detailed error reporting.
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `resource` | string | required | FHIR resource as JSON string |
+| `version` | string | `"R4"` | FHIR version: `"R4"` or `"R5"` |
+
+**Example:**
+
+```json
+{
+  "resource": "{"resourceType": "Observation", "id": "obs1", "status": "final", "code": {"coding": [{"system": "http://loinc.org", "code": "8480-6"]}}, "subject": {"reference": "Patient/example"}}",
+  "version": "R4"
+}
+```
+
+**Response (valid):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "valid": true,
+    "error_count": 0,
+    "warning_count": 0
+  },
+  "issues": [],
+  "meta": {
+    "fhir_version": "R4",
+    "resource_type": "Observation",
+    "duration_ms": 8.2,
+    "truncated": false
+  }
+}
+```
+
+**Response (invalid):**
+
+```json
+{
+  "success": false,
+  "data": {
+    "valid": false,
+    "error_count": 1,
+    "warning_count": 0
+  },
+  "issues": [
+    {
+      "severity": "error",
+      "code": "E_VALIDATION_FAILED",
+      "path": "Observation.status",
+      "message": "Field required [type=missing, input_value={...}, input_type=dict]"
+    }
+  ],
+  "meta": {
+    "fhir_version": "R4",
+    "resource_type": "Observation",
+    "duration_ms": 5.1,
+    "truncated": false
+  }
+}
+```
+
+### summarize_bundle
+
+Analyze FHIR bundles with entry counts, resource type distributions, and reference graphs.
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `bundle` | string | required | FHIR Bundle as JSON string |
+| `version` | string | `"R4"` | FHIR version: `"R4"` or `"R5"` |
+| `include_references` | boolean | `true` | Include bounded reference graph in output |
+| `max_entries` | integer | `10000` | Maximum entries to process (1-10000) |
+
+**Example:**
+
+```json
+{
+  "bundle": "{"resourceType": "Bundle", "type": "transaction", "entry": [{"request": {"method": "POST", "url": "Patient"}, "resource": {"resourceType": "Patient", "id": "p1"}}]}",
+  "version": "R4",
+  "include_references": true
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "bundle_type": "transaction",
+    "total": null,
+    "entry_count": 1,
+    "truncated": false,
+    "resource_type_counts": {"Patient": 1},
+    "request_method_counts": {"POST": 1},
+    "references": [],
+    "contained_count": 0
+  },
+  "issues": [],
+  "meta": {
+    "fhir_version": "R4",
+    "resource_type": "Bundle",
+    "duration_ms": 15.7,
+    "truncated": false
+  }
+}
+```
+
+### generate_example
+
+Create valid FHIR resource examples for any resource type with optional field overrides.
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `resource_type` | string | required | FHIR resource type (e.g., `"Patient"`, `"Observation"`) |
+| `version` | string | `"R4"` | FHIR version: `"R4"` or `"R5"` |
+| `overrides` | object | `null` | Flat dotted-path overrides (e.g., `{"name.0.family": "Smith"}`) |
+
+**Example:**
+
+```json
+{
+  "resource_type": "Patient",
+  "version": "R4",
+  "overrides": {
+    "name.0.family": "Smith",
+    "gender": "female",
+    "birthDate": "1990-05-15"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "resource_type": "Patient",
+    "fhir_version": "R4",
+    "resource": "{"resourceType":"Patient","id":"example","name":[{"family":"Smith","given":["Test"]}],"gender":"female","birthDate":"1990-05-15"}",
+    "validated": true
+  },
+  "issues": [],
+  "meta": {
+    "fhir_version": "R4",
+    "resource_type": "Patient",
+    "duration_ms": 23.1,
+    "truncated": false
+  }
+}
+```
+
+---
+
+## Error Codes
+
+All tools return a unified response envelope with structured issues:
+
+| Code | Severity | Description |
+|------|----------|-------------|
+| `E_INVALID_JSON` | error | Payload is not parseable JSON |
+| `E_UNSUPPORTED_VERSION` | error | Version not in {R4, R5} |
+| `E_UNKNOWN_RESOURCE_TYPE` | error | Resource type not found in selected version |
+| `E_VALIDATION_FAILED` | error | Structural validation failed |
+| `E_NOT_A_BUNDLE` | error | `summarize_bundle` called on non-Bundle resource |
+| `E_GENERATION_FAILED` | error | Generator could not produce valid instance |
+| `E_PAYLOAD_TOO_LARGE` | error | JSON payload exceeds 10 MB |
+| `E_DEPTH_EXCEEDED` | error | JSON nesting exceeds 50 levels |
+| `E_ENTRY_LIMIT` | error | Bundle entries exceed limit |
+| `W_VERSION_ASSUMED` | warning | Default version (R4) was used |
+| `W_OUTPUT_TRUNCATED` | warning | Results truncated due to node/entry caps |
+
+Unknown resource types include close-match suggestions for self-correction.
+
+---
+
+## Development
+
+### Prerequisites
+
+- Python 3.12+
+- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+
+### Install from Source
+
+```bash
+# Clone repository
+git clone https://github.com/CytoCync/fhir-inspector-mcp.git
+cd fhir-inspector-mcp
+
+# Install dependencies
+uv sync --dev
+
+# Run server directly
+uv run fhir-inspector-mcp
+
+# Run tests
+uv run pytest --cov
+```
+
+### Project Structure
+
+```
+src/fhir_inspector_mcp/
+├── __main__.py          # Entry point
+├── server.py            # FastMCP server setup
+├── tools.py             # 4 @mcp.tool wrappers
+├── models.py            # Response envelope & Issue models
+└── core/
+    ├── __init__.py
+    ├── limits.py        # Guardrail constants
+    ├── registry.py      # Version/type resolution
+    ├── parser.py        # JSON parsing + validation
+    ├── inspection.py    # Element tree extraction
+    ├── validation.py    # Validation wrapper
+    ├── summarizer.py    # Bundle summarization
+    └── generation.py    # Example generation
+```
+
+### Testing
+
+```bash
+# All tests with coverage
+uv run pytest --cov=fhir_inspector_mcp --cov-report=term-missing
+
+# Unit tests only
+uv run pytest tests/unit/
+
+# Integration tests only
+uv run pytest tests/integration/
+
+# Property-based tests
+uv run pytest tests/property/
+```
+
+---
+
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## Security
+
+This server:
+- Runs as stdio-only (no network listener)
+- Enforces 10 MB payload limit, 50-level depth limit, 10k bundle entry cap
+- Validates all inputs with allowlist regex before dynamic imports
+- Never dereferences FHIR Reference URLs (no SSRF)
+- Uses only synthetic test data (no PHI)
+- Runs `pip-audit` in CI for vulnerability scanning
+
+Report security issues via [GitHub Security Advisories](https://github.com/CytoCync/fhir-inspector-mcp/security/advisories).
