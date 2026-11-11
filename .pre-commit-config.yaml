@@ -1,0 +1,17 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.4
+    hooks:
+      - id: ruff-format
+      - id: ruff
+        args: [--fix]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.18.2
+    hooks:
+      - id: mypy
+        # Only src/ is type-checked; tests are lint-exempt per project convention.
+        files: ^src/fhir_inspector_mcp/
+        additional_dependencies:
+          - fhir-resources==8.3.0
+          - pydantic>=2,<3
+          - fastmcp==4.1.6

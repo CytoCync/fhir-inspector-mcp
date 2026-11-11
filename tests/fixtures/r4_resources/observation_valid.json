@@ -1,0 +1,11 @@
+{
+  "resourceType": "Observation",
+  "id": "example",
+  "status": "final",
+  "code": {
+    "coding": [
+      { "system": "http://example.org", "code": "example" }
+    ]
+  },
+  "subject": { "reference": "Patient/example" }
+}

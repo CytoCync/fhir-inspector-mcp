@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "**cw-208**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Ruff lint
+        run: ruff check .
+      - name: Ruff format check
+        run: ruff format --check .
+      - name: MyPy type check
+        run: mypy src/fhir_inspector_mcp
+      - name: pytest with coverage
+        run: |
+          pytest --cov=fhir_inspector_mcp --cov-report=term-missing --cov-fail-under=90
+      - name: pip-audit security gate
+        run: pip-audit --strict
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.xml
+          fail-on-error: false

@@ -1,0 +1,19 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "request": { "method": "POST", "url": "Patient" },
+      "resource": { "resourceType": "Patient", "id": "example-0" }
+    },
+    {
+      "request": { "method": "POST", "url": "Observation" },
+      "resource": {
+        "resourceType": "Observation",
+        "id": "example-1",
+        "status": "final",
+        "code": { "coding": [{ "system": "http://example.org", "code": "example" }] }
+      }
+    }
+  ]
+}

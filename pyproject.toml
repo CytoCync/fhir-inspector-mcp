@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fhir-inspector-mcp"
+version = "1.0.0"
+description = "Zero-cost MCP server to inspect, validate, summarize, and generate FHIR R4/R5 resources"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp==4.1.6",
+    "fhir-resources==8.3.0",
+    "pydantic>=2,<3",
+]
+
+[project.scripts]
+fhir-inspector-mcp = "fhir_inspector_mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-asyncio",
+    "ruff",
+    "mypy",
+    "pip-audit",
+    "pre-commit",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["fhir_inspector_mcp"]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["fhir_inspector_mcp"]
+mypy_path = "src"
