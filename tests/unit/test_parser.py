@@ -96,17 +96,17 @@ class TestParseResourceGuardrails:
         assert issues[0].code == "E_DEPTH_EXCEEDED"
 
     def test_depth_at_boundary_passes(self) -> None:
-        # Boundary: deepest node at depth MAX_DEPTH - 1 must pass check_depth.
-        # The nesting lives inside Patient.extension (a recursive Extension
-        # type) so the payload is a valid Patient — otherwise Patient's
-        # extra='forbid' rejects the unknown key and the test would exercise
-        # model validation, not the depth guardrail. Each extension wrap adds
-        # 2 levels (dict + list): root=0, extension list=1, first ext=2.
-        wraps = (MAX_DEPTH - 4) // 2  # deepest scalar lands at depth MAX_DEPTH - 1
-        ext: dict[str, Any] = {"url": "http://example.org/ext"}
-        for _ in range(wraps):
-            ext = {"url": "http://example.org/ext", "extension": [ext]}
-        obj: dict[str, Any] = {"resourceType": "Patient", "extension": [ext]}
+        # Exactly MAX_DEPTH levels must parse (boundary condition).
+        # Patient sets extra='forbid', so the nesting must use a real recursive
+        # FHIR element: Extension.extension. check_depth counts the Patient
+        # dict at 0, its extension list at 1, and each Extension level adds 2
+        # (dict + its extension list); the innermost url string lands at
+        # 2*n + 3 = MAX_DEPTH - 1, the deepest depth that still passes.
+        n = (MAX_DEPTH - 4) // 2
+        node: dict[str, Any] = {"url": "http://example.org/ext"}
+        for _ in range(n):
+            node = {"url": "http://example.org/ext", "extension": [node]}
+        obj: dict[str, Any] = {"resourceType": "Patient", "extension": [node]}
         model, issues = parse_resource(json.dumps(obj), "R4")
         assert model is not None
         assert issues == []
