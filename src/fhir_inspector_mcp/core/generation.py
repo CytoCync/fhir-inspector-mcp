@@ -92,15 +92,28 @@ def _is_fhir_abc(annotation: Any) -> bool:
     )
 
 
-def _concrete_for_abc(annotation: Any, package: str) -> type[BaseModel] | None:
+def _concrete_for_abc(
+    annotation: Any, package: str, owner_module: str | None = None
+) -> type[BaseModel] | None:
     """Resolve a fhir.resources ABC marker ('XType') to its concrete model class.
 
     Field annotations use ABCs (e.g. ``abc.CodeableConceptType``) with no runtime
-    link to the concrete pydantic class; the stable naming convention
-    ``XType -> <package>.<x>.X`` resolves them, preferring the owner version's
-    sub-package (e.g. R4B) before the R5 root.
+    link to the concrete pydantic class. Resolution order:
+    1. the owner module of the field's model (nested backbone elements like
+       ``AppointmentParticipant`` live in the same module as their parent
+       resource, e.g. ``fhir.resources.appointment``);
+    2. a dedicated ``<package>.<name>`` module (top-level datatypes like
+       ``CodeableConcept`` live in ``fhir.resources.codeableconcept``).
     """
     name = annotation.__name__[: -len("Type")]
+    if owner_module is not None:
+        try:
+            mod = importlib.import_module(owner_module)
+            cls = getattr(mod, name, None)
+            if isinstance(cls, type) and issubclass(cls, BaseModel):
+                return cls
+        except (ImportError, AttributeError):
+            pass
     for base in dict.fromkeys([package, "fhir.resources"]):
         try:
             module = importlib.import_module(f"{base}.{name.lower()}")
@@ -121,15 +134,19 @@ def _safe_dump(model_cls: type[BaseModel], data: dict[str, Any]) -> Any:
         return data
 
 
-def _primitive_value(annotation: Any, package: str = "fhir.resources") -> Any:
+def _primitive_value(
+    annotation: Any, package: str = "fhir.resources", owner_module: str | None = None
+) -> Any:
     """Example value for a field annotation; recurses into complex FHIR types."""
     inner = _unwrap_optional(annotation)
     name = _label(inner)
 
     if name == "list":
         args = typing.get_args(inner)
-        item = _primitive_value(args[0], package) if args else None
-        return [item] if item is not None else []
+        item = _primitive_value(args[0], package, owner_module) if args else None
+        # A required list field must be non-empty: emit a one-element list even
+        # when the item example is None (e.g. an unresolvable complex type).
+        return [item] if item is not None else [{}]
     if name in {"union", "dict", "none"}:
         return None
     if name in PRIMITIVE_VALUES:
@@ -139,7 +156,7 @@ def _primitive_value(annotation: Any, package: str = "fhir.resources") -> Any:
         return _safe_dump(inner, _fill_required(inner))
 
     if _is_fhir_abc(inner):
-        concrete = _concrete_for_abc(inner, package)
+        concrete = _concrete_for_abc(inner, package, owner_module)
         if concrete is not None:
             return _safe_dump(concrete, _fill_required(concrete))
         # ponytail: no concrete class resolvable — complex datatypes validate
@@ -156,7 +173,7 @@ def _primitive_value(annotation: Any, package: str = "fhir.resources") -> Any:
     return None
 
 
-def _field_example(info: Any, package: str) -> Any:
+def _field_example(info: Any, package: str, owner_module: str | None = None) -> Any:
     """Example for a FieldInfo, preferring the declared value-set over 'example'.
 
     fhir.resources lists FHIR ValueSets on the field (json_schema_extra
@@ -166,8 +183,12 @@ def _field_example(info: Any, package: str) -> Any:
     extra = info.json_schema_extra or {}
     enum_values = extra.get("enum_values")
     if enum_values:
+        # A list-typed field needs a list even when the value-set supplies a single
+        # member (e.g. CoverageEligibilityResponse.purpose).
+        if _label(_unwrap_optional(info.annotation)) == "list":
+            return [enum_values[0]]
         return enum_values[0]
-    return _primitive_value(info.annotation, package)
+    return _primitive_value(info.annotation, package, owner_module)
 
 
 def _one_of_many_groups(model_cls: type[BaseModel]) -> dict[str, list[str]]:
@@ -216,6 +237,7 @@ def _fill_required(model_cls: type[BaseModel]) -> dict[str, Any]:
     json_schema_extra to detect true cardinality.
     """
     package = _package_of(model_cls)
+    owner_module = model_cls.__module__
     instance: dict[str, Any] = {}
     for name, info in model_cls.model_fields.items():
         if "__ext" in name or name == "fhir_comments":
@@ -227,7 +249,7 @@ def _fill_required(model_cls: type[BaseModel]) -> dict[str, Any]:
         elem_rq = bool(extra.get("element_required", False))
         if not is_rq and not elem_rq:
             continue
-        value = _field_example(info, package)
+        value = _field_example(info, package, owner_module)
         if value is not None and value != []:
             instance[name] = value
     return _fill_choice_groups(model_cls, package, instance)
@@ -245,26 +267,33 @@ def apply_overrides(instance: dict[str, Any], overrides: dict[str, Any] | None) 
     for key, value in overrides.items():
         parts = str(key).split(".")
         cursor: Any = result
-        for part in parts[:-1]:
+        for pos, part in enumerate(parts[:-1]):
+            # A numeric segment means the parent must be a list; create one when
+            # the field is absent (e.g. "name.0.family" on a Patient with no name).
+            want_list = parts[pos + 1].isdigit()
             if part.isdigit():
                 idx = int(part)
                 if not isinstance(cursor, list):
                     raise KeyError(f"cannot index non-list at {part!r} in {key!r}")
-                while len(cursor) <= idx:
-                    cursor.append({})
+                if idx > len(cursor):
+                    raise KeyError(f"index {idx} skips past end of list in {key!r}")
+                if idx == len(cursor):
+                    cursor.append([] if want_list else {})
                 cursor = cursor[idx]
             else:
                 if not isinstance(cursor, dict):
                     raise KeyError(f"cannot descend into non-object at {part!r} in {key!r}")
                 if not isinstance(cursor.get(part), (dict, list)):
-                    cursor[part] = {}
+                    cursor[part] = [] if want_list else {}
                 cursor = cursor[part]
         last = parts[-1]
         if last.isdigit():
             idx = int(last)
             if not isinstance(cursor, list):
                 raise KeyError(f"cannot index non-list at {last!r} in {key!r}")
-            while len(cursor) <= idx:
+            if idx > len(cursor):
+                raise KeyError(f"index {idx} skips past end of list in {key!r}")
+            if idx == len(cursor):
                 cursor.append(None)
             cursor[idx] = value
         else:
@@ -302,21 +331,27 @@ def generate_instance(
     try:
         model_cls = resolve_model(version, resource_type)
     except RegistryError as exc:
-        return {}, False, [
-            Issue(severity="error", code=exc.code, path="resourceType", message=exc.message)
-        ]
+        return (
+            {},
+            False,
+            [Issue(severity="error", code=exc.code, path="resourceType", message=exc.message)],
+        )
 
     try:
         data = apply_overrides(_fill_required(model_cls), overrides)
     except (KeyError, TypeError) as exc:
-        return {}, False, [
-            Issue(
-                severity="error",
-                code=E_GENERATION_FAILED,
-                path=None,
-                message=f"invalid overrides: {exc}",
-            )
-        ]
+        return (
+            {},
+            False,
+            [
+                Issue(
+                    severity="error",
+                    code=E_GENERATION_FAILED,
+                    path=None,
+                    message=f"invalid overrides: {exc}",
+                )
+            ],
+        )
 
     last_issues: list[Issue] = []
     for _attempt in range(MAX_GENERATION_ATTEMPTS):
@@ -330,17 +365,22 @@ def generate_instance(
         # the result is directly json.dumps-able by the tool layer.
         return instance.model_dump(mode="json", by_alias=True, exclude_none=True), True, []
 
-    return data, False, last_issues or [
-        Issue(
-            severity="error",
-            code=E_GENERATION_FAILED,
-            path=None,
-            message=(
-                f"could not generate a valid {resource_type} within "
-                f"{MAX_GENERATION_ATTEMPTS} attempts"
-            ),
-        )
-    ]
+    return (
+        data,
+        False,
+        last_issues
+        or [
+            Issue(
+                severity="error",
+                code=E_GENERATION_FAILED,
+                path=None,
+                message=(
+                    f"could not generate a valid {resource_type} within "
+                    f"{MAX_GENERATION_ATTEMPTS} attempts"
+                ),
+            )
+        ],
+    )
 
 
 __all__: list[str] = ["_fill_required", "apply_overrides", "generate_instance"]
