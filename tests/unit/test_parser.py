@@ -9,8 +9,6 @@ from __future__ import annotations
 import json
 from typing import Any
 
-import pytest
-
 from fhir_inspector_mcp.core.limits import MAX_DEPTH, MAX_PAYLOAD_BYTES
 from fhir_inspector_mcp.core.parser import _loc_to_path, parse_resource, validation_issues
 from tests import factories
@@ -34,9 +32,7 @@ class TestParseResourceHappyPath:
         assert issues == []
 
     def test_valid_bundle(self) -> None:
-        model, issues = parse_resource(
-            json.dumps(factories.make_transaction_bundle(2)), "R4"
-        )
+        model, issues = parse_resource(json.dumps(factories.make_transaction_bundle(2)), "R4")
         assert model is not None
         assert issues == []
 
@@ -100,12 +96,17 @@ class TestParseResourceGuardrails:
         assert issues[0].code == "E_DEPTH_EXCEEDED"
 
     def test_depth_at_boundary_passes(self) -> None:
-        # Exactly MAX_DEPTH levels must parse (boundary condition).
-        obj: dict[str, Any] = {"resourceType": "Patient"}
-        current = obj
-        for _ in range(MAX_DEPTH - 1):
-            current["n"] = {}
-            current = current["n"]
+        # Boundary: deepest node at depth MAX_DEPTH - 1 must pass check_depth.
+        # The nesting lives inside Patient.extension (a recursive Extension
+        # type) so the payload is a valid Patient — otherwise Patient's
+        # extra='forbid' rejects the unknown key and the test would exercise
+        # model validation, not the depth guardrail. Each extension wrap adds
+        # 2 levels (dict + list): root=0, extension list=1, first ext=2.
+        wraps = (MAX_DEPTH - 4) // 2  # deepest scalar lands at depth MAX_DEPTH - 1
+        ext: dict[str, Any] = {"url": "http://example.org/ext"}
+        for _ in range(wraps):
+            ext = {"url": "http://example.org/ext", "extension": [ext]}
+        obj: dict[str, Any] = {"resourceType": "Patient", "extension": [ext]}
         model, issues = parse_resource(json.dumps(obj), "R4")
         assert model is not None
         assert issues == []
@@ -135,9 +136,7 @@ class TestParseResourceResourceType:
         assert "Patient" in issues[0].message  # close-match suggestion
 
     def test_injection_type_rejected(self) -> None:
-        model, issues = parse_resource(
-            json.dumps({"resourceType": "Patient;drop"}), "R4"
-        )
+        model, issues = parse_resource(json.dumps({"resourceType": "Patient;drop"}), "R4")
         assert model is None
         assert issues[0].code == "E_UNKNOWN_RESOURCE_TYPE"
 
@@ -158,9 +157,7 @@ class TestParseResourceValidationErrors:
     def test_observation_missing_status(self) -> None:
         # Observation.status is required (1..1); omitting it must produce a
         # structured E_VALIDATION_FAILED issue with a dotted path.
-        model, issues = parse_resource(
-            json.dumps(factories.patient_missing_required()), "R4"
-        )
+        model, issues = parse_resource(json.dumps(factories.patient_missing_required()), "R4")
         assert model is None
         assert len(issues) >= 1
         assert all(i.code == "E_VALIDATION_FAILED" for i in issues)
@@ -199,9 +196,8 @@ class TestLocToPath:
 
 class TestValidationIssues:
     def test_maps_pydantic_errors(self) -> None:
-        from pydantic import ValidationError
-
         from fhir.resources.R4B.observation import Observation
+        from pydantic import ValidationError
 
         try:
             Observation.model_validate({"resourceType": "Observation"})
@@ -213,17 +209,14 @@ class TestValidationIssues:
 
     def test_sanitizes_control_characters(self) -> None:
         # S-07: issue text must be stripped of CR/LF/NUL/ANSI escapes.
-        from pydantic import ValidationError
-
         from fhir.resources.R4B.patient import Patient
+        from pydantic import ValidationError
 
         try:
             Patient.model_validate({"resourceType": "Patient", "id": "a\nb\x1b[31m"})
         except ValidationError:
             pass  # may or may not raise; the sanitize check below is the point
-        issues = validation_issues(
-            _make_fake_validation_error()
-        )
+        issues = validation_issues(_make_fake_validation_error())
         for issue in issues:
             assert "\n" not in (issue.message or "")
             assert "\x1b" not in (issue.message or "")
@@ -231,9 +224,8 @@ class TestValidationIssues:
 
 def _make_fake_validation_error():
     """Build a real ValidationError with control chars in the message path."""
-    from pydantic import ValidationError
-
     from fhir.resources.R4B.patient import Patient
+    from pydantic import ValidationError
 
     try:
         Patient.model_validate({"resourceType": 12345})
