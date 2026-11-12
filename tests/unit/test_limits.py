@@ -6,6 +6,8 @@ S-01 (payload size), S-02 (depth), S-03 (bundle entries).
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from fhir_inspector_mcp.core.limits import (
