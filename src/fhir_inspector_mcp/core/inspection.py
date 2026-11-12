@@ -1,6 +1,7 @@
 import types
 import typing
 from collections.abc import Iterator
+from functools import lru_cache
 from typing import Any
 
 from pydantic import BaseModel
@@ -19,7 +20,11 @@ def _inner_type(annotation: Any) -> str:
     origin = _origin(annotation)
     args = typing.get_args(annotation)
     # Optional[X] / Annotated wrappers
-    if origin is typing.Union or origin is types.UnionType or (origin is not None and "Annotated" in str(origin)):
+    if (
+        origin is typing.Union
+        or origin is types.UnionType
+        or (origin is not None and "Annotated" in str(origin))
+    ):
         non_none = [a for a in args if a is not type(None)]
         if len(args) != len(non_none) and len(non_none) == 1:
             return _inner_type(non_none[0])
@@ -35,10 +40,12 @@ def _inner_type(annotation: Any) -> str:
     return str(annotation)
 
 
+@lru_cache(maxsize=4096)
 def _field_annotation_label(field: Any) -> str:
     return _inner_type(field.annotation)
 
 
+@lru_cache(maxsize=4096)
 def _is_repeated(field: Any) -> bool:
     origin = _origin(field.annotation)
     if origin is list:
@@ -47,13 +54,20 @@ def _is_repeated(field: Any) -> bool:
     return any(_origin(a) is list for a in args)
 
 
+@lru_cache(maxsize=256)
+def _model_fields(model_cls: type[BaseModel]) -> tuple[tuple[str, Any], ...]:
+    """Cached (name, field) pairs for a model class, skipping extension fields."""
+    return tuple(
+        (name, field)
+        for name, field in model_cls.model_fields.items()
+        if "__ext" not in name and name != "fhir_comments"
+    )
+
+
 def _iter_children(model: BaseModel) -> Iterator[tuple[str, Any, Any]]:
     """Yield (field_name, value, field_info) for populated fields, in
     model_fields declaration order (stable node ordering, step 3.4)."""
-    fields = type(model).model_fields
-    for name, field in fields.items():
-        if "__ext" in name or name == "fhir_comments":
-            continue
+    for name, field in _model_fields(type(model)):
         value = getattr(model, name, None)
         if value is None:
             continue
@@ -105,6 +119,7 @@ def build_element_tree(
 
 
 def _as_reference_dict(path: str, value: Any) -> dict[str, str] | None:
+    """Render a Reference as {source, target}; target is the reference string."""
     ref = getattr(value, "reference", None)
     target = getattr(value, "type", None)
     display = getattr(value, "display", None)
@@ -112,9 +127,8 @@ def _as_reference_dict(path: str, value: Any) -> dict[str, str] | None:
         return None
     # References are opaque strings: never dereferenced, no HTTP (S-19).
     return {
-        "path": path,
-        "target": target or "",
-        "reference": ref or "",
+        "source": path,
+        "target": str(ref) if ref else "",
     }
 
 
@@ -159,15 +173,17 @@ def extract_contained(model: BaseModel) -> list[dict[str, str]]:
         if id(current) in seen:
             continue
         seen.add(id(current))
-        raw = current.model_dump(by_alias=True, exclude_none=True)
-        items = raw.get("contained", [])
+        # Read the contained list directly off the model instead of
+        # model_dump()-ing the whole subtree (profiling: model_dump dominated
+        # inspect latency on large bundles).
+        items = getattr(current, "contained", None) or []
         for idx, item in enumerate(items):
-            if isinstance(item, dict):
+            if isinstance(item, BaseModel):
                 contained.append(
                     {
                         "path": f"{path}contained[{idx}]" if path else f"contained[{idx}]",
-                        "resourceType": str(item.get("resourceType", "unknown")),
-                        "id": str(item.get("id", "")),
+                        "resourceType": str(getattr(item, "__resource_type__", "unknown")),
+                        "id": str(getattr(item, "id", "") or ""),
                     }
                 )
         for name, value, _field in _iter_children(current):

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 # Guardrail constants
 MAX_PAYLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
@@ -39,7 +39,7 @@ def check_json_parses(raw: str) -> dict[str, Any]:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise GuardrailExceeded("E_INVALID_JSON", f"payload is not valid JSON: {exc}") from exc
-    return data
+    return cast(dict[str, Any], data)
 
 
 def check_depth(obj: Any, max_depth: int = MAX_DEPTH) -> None:
