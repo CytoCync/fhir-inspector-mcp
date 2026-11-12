@@ -474,6 +474,8 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+See [docs/development.md](docs/development.md) for development setup, testing, and code quality instructions.
+
 ---
 
 ## Security
