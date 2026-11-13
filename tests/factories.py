@@ -67,10 +67,12 @@ def make_transaction_bundle(n: int = 3) -> dict[str, Any]:
     """Transaction bundle with n entries (POST Patient + Observation + Org)."""
     entries = []
     for i in range(n):
-        entries.append({
-            "request": {"method": "POST", "url": "Patient"},
-            "resource": make_patient(id=f"example-{i}"),
-        })
+        entries.append(
+            {
+                "request": {"method": "POST", "url": "Patient"},
+                "resource": make_patient(id=f"example-{i}"),
+            }
+        )
     return {"resourceType": "Bundle", "type": "transaction", "entry": entries}
 
 
@@ -78,9 +80,11 @@ def make_batch_bundle(n: int = 3) -> dict[str, Any]:
     """Batch bundle with n entries."""
     entries = []
     for i in range(n):
-        entries.append({
-            "request": {"method": "GET", "url": f"Patient/example-{i}"},
-        })
+        entries.append(
+            {
+                "request": {"method": "GET", "url": f"Patient/example-{i}"},
+            }
+        )
     return {"resourceType": "Bundle", "type": "batch", "entry": entries}
 
 
@@ -99,17 +103,19 @@ def make_searchset_bundle(n: int = 3, total: int = 10) -> dict[str, Any]:
 
 def make_document_bundle(n: int = 2) -> dict[str, Any]:
     """Document bundle with a Composition and n contained resources."""
-    entries: list[dict[str, Any]] = [{
-        "resource": {
-            "resourceType": "Composition",
-            "id": "example",
-            "status": "preliminary",
-            "type": {"coding": [{"system": "http://example.org", "code": "example"}]},
-            "date": "2024-01-01",
-            "author": [{"reference": "Practitioner/example"}],
-            "title": "Example Document",
-        },
-    }]
+    entries: list[dict[str, Any]] = [
+        {
+            "resource": {
+                "resourceType": "Composition",
+                "id": "example",
+                "status": "preliminary",
+                "type": {"coding": [{"system": "http://example.org", "code": "example"}]},
+                "date": "2024-01-01",
+                "author": [{"reference": "Practitioner/example"}],
+                "title": "Example Document",
+            },
+        }
+    ]
     for i in range(n):
         entries.append({"resource": make_patient(id=f"example-{i}")})
     return {"resourceType": "Bundle", "type": "document", "entry": entries}

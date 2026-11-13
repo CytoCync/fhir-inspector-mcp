@@ -16,7 +16,6 @@ import pytest
 from fhir_inspector_mcp.core.registry import _known_resource_types
 from fhir_inspector_mcp.tools import generate_example, inspect_resource, validate_resource
 
-
 SAMPLE_SIZE = 25
 
 

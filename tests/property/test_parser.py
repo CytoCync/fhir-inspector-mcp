@@ -14,12 +14,11 @@ from typing import Any
 from fhir_inspector_mcp.core.limits import (
     MAX_DEPTH,
     MAX_PAYLOAD_BYTES,
+    GuardrailExceeded,
     check_depth,
     check_payload_size,
 )
-from fhir_inspector_mcp.core.limits import GuardrailExceeded
 from fhir_inspector_mcp.core.parser import parse_resource
-from tests import factories
 
 _rng = random.Random(20240101)  # deterministic seed: reproducible runs
 
@@ -106,14 +105,14 @@ class TestParserNeverRaises:
             "true",
             "123",
             '"str"',
-            "{\"a\":}",
-            "{\"a\":\"b\"\",\"c\":}",
+            '{"a":}',
+            '{"a":"b"","c":}',
             "[[[[[[[[[[",
-            "{\"resourceType\":\"\"}",
-            "{\"resourceType\":123}",
-            "{\"resourceType\":\"Patient\",\"id\":null}",
+            '{"resourceType":""}',
+            '{"resourceType":123}',
+            '{"resourceType":"Patient","id":null}',
             "\ufeff",
-            "{\"resourceType\":\"Patient\",\"gender\":\u0000}",
+            '{"resourceType":"Patient","gender":\u0000}',
         ]
         for i in range(200):
             hostile.append(json.dumps({"random": _rng.randint(0, 10**6)}))

@@ -80,9 +80,7 @@ class TestInspectResource:
         assert result["data"]["summary"]["depth_reached"] <= 10
 
     def test_max_depth_clamped_low(self) -> None:
-        result = inspect_resource(
-            json.dumps(factories.make_patient()), version="R4", max_depth=0
-        )
+        result = inspect_resource(json.dumps(factories.make_patient()), version="R4", max_depth=0)
         assert result["success"] is True
         assert result["data"]["summary"]["depth_reached"] >= 1
 
@@ -127,9 +125,7 @@ class TestValidateResource:
         assert result["data"]["error_count"] == 0
 
     def test_invalid_observation(self) -> None:
-        result = validate_resource(
-            json.dumps(factories.patient_missing_required()), version="R4"
-        )
+        result = validate_resource(json.dumps(factories.patient_missing_required()), version="R4")
         assert result["success"] is False
         assert result["data"] is None
         assert any(i["code"] == "E_VALIDATION_FAILED" for i in result["issues"])
@@ -151,9 +147,7 @@ class TestValidateResource:
 
 class TestSummarizeBundle:
     def test_transaction_bundle(self) -> None:
-        result = summarize_bundle(
-            json.dumps(factories.make_transaction_bundle(3)), version="R4"
-        )
+        result = summarize_bundle(json.dumps(factories.make_transaction_bundle(3)), version="R4")
         assert result["success"] is True
         assert result["data"]["bundle_type"] == "transaction"
         assert result["data"]["entry_count"] == 3
@@ -239,4 +233,4 @@ class TestCatchAll:
         result = inspect_resource("not json")
         blob = json.dumps(result)
         assert "Traceback" not in blob
-        assert "File \"" not in blob
+        assert 'File "' not in blob

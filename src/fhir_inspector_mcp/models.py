@@ -22,7 +22,9 @@ DEFAULT_FHIR_VERSION = "R4"
 # Control characters incl. CR/LF/NUL and ANSI escapes are stripped from issue
 # strings before they reach the response envelope (log forging / terminal escape
 # injection, CWE-117 / S-07).
-_CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\x1b\r\n]+")
+# injection, CWE-117 / S-07). ANSI CSI sequences (ESC [ ... letter) are
+# stripped whole so the trailing params are removed too.
+_CONTROL_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]|[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\r\n]+")
 
 
 def sanitize_text(value: Any) -> Any:
@@ -66,5 +68,6 @@ class ToolResponse(BaseModel):
             message=sanitize_text(message),
         )
         return ToolResponse(success=False, data=None, issues=[issue], meta=meta)
+
     def to_dict(self) -> dict[str, Any]:
-        return self.model_dump(mode="json", exclude_none=True)
+        return self.model_dump(mode="json", exclude_none=False)

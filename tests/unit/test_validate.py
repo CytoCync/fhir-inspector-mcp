@@ -30,17 +30,13 @@ class TestValidateHappyPath:
         assert result["success"] is True
 
     def test_valid_bundle(self) -> None:
-        result = validate_resource(
-            json.dumps(factories.make_transaction_bundle(2)), version="R4"
-        )
+        result = validate_resource(json.dumps(factories.make_transaction_bundle(2)), version="R4")
         assert result["success"] is True
 
 
 class TestValidateSadPaths:
     def test_missing_required_field(self) -> None:
-        result = validate_resource(
-            json.dumps(factories.patient_missing_required()), version="R4"
-        )
+        result = validate_resource(json.dumps(factories.patient_missing_required()), version="R4")
         assert result["success"] is False
         assert any(i["code"] == "E_VALIDATION_FAILED" for i in result["issues"])
         assert any(i.get("path") == "status" for i in result["issues"])

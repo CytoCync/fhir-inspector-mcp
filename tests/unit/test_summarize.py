@@ -14,9 +14,7 @@ from tests import factories
 
 class TestSummarizeHappyPath:
     def test_transaction_bundle(self) -> None:
-        result = summarize_bundle(
-            json.dumps(factories.make_transaction_bundle(3)), version="R4"
-        )
+        result = summarize_bundle(json.dumps(factories.make_transaction_bundle(3)), version="R4")
         assert result["success"] is True
         data = result["data"]
         assert data["bundle_type"] == "transaction"
@@ -33,9 +31,7 @@ class TestSummarizeHappyPath:
         assert result["data"]["entry_count"] == 3
 
     def test_document_bundle(self) -> None:
-        result = summarize_bundle(
-            json.dumps(factories.make_document_bundle(2)), version="R4"
-        )
+        result = summarize_bundle(json.dumps(factories.make_document_bundle(2)), version="R4")
         assert result["data"]["bundle_type"] == "document"
         assert result["data"]["resource_type_counts"]["Composition"] == 1
 

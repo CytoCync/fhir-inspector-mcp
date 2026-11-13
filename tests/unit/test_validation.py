@@ -38,7 +38,7 @@ class TestValidateModelHappyPath:
     def test_valid_r5_patient(self) -> None:
         model, _ = parse_resource(json.dumps(factories.make_patient()), "R5")
         assert model is not None
-        valid, issues = validate_model(model)
+        valid, _issues = validate_model(model)
         assert valid is True
 
 

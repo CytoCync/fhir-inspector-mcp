@@ -7,8 +7,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from fhir_inspector_mcp.tools import (
     generate_example,
     inspect_resource,
@@ -43,9 +41,7 @@ class TestErrorCodes:
         assert result["issues"][0]["code"] == "E_UNKNOWN_RESOURCE_TYPE"
 
     def test_e_validation_failed(self) -> None:
-        result = validate_resource(
-            json.dumps(factories.patient_missing_required()), version="R4"
-        )
+        result = validate_resource(json.dumps(factories.patient_missing_required()), version="R4")
         assert any(i["code"] == "E_VALIDATION_FAILED" for i in result["issues"])
 
     def test_e_not_a_bundle(self) -> None:
@@ -53,9 +49,7 @@ class TestErrorCodes:
         assert result["issues"][0]["code"] == "E_NOT_A_BUNDLE"
 
     def test_e_generation_failed(self) -> None:
-        result = generate_example(
-            "Patient", version="R4", overrides={"name.99.family": "X"}
-        )
+        result = generate_example("Patient", version="R4", overrides={"name.99.family": "X"})
         assert any(i["code"] == "E_GENERATION_FAILED" for i in result["issues"])
 
     def test_e_payload_too_large(self) -> None:

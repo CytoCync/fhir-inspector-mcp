@@ -10,7 +10,7 @@ import json
 
 import pytest
 
-from fhir_inspector_mcp.core.limits import MAX_BUNDLE_ENTRIES, NODE_CAP
+from fhir_inspector_mcp.core.limits import NODE_CAP
 from fhir_inspector_mcp.core.parser import parse_resource
 from fhir_inspector_mcp.core.summarizer import EntryLimitExceeded, summarize_bundle
 from tests import factories
@@ -95,9 +95,7 @@ class TestSummarizerEntryLimit:
         # S-03: > MAX_BUNDLE_ENTRIES raises EntryLimitExceeded (DoS guard).
         # Build a bundle dict with 10_001 entries without materializing 10k models:
         # the summarizer counts len(entries) before any per-entry work.
-        entries = [
-            {"resource": factories.make_patient(id=f"p{i}")} for i in range(5)
-        ]
+        [{"resource": factories.make_patient(id=f"p{i}")} for i in range(5)]
         bundle = _parse_bundle(factories.make_searchset_bundle(5, total=5))
         # Simulate the over-cap condition by calling with a tiny max_entries
         # and asserting the hard-cap path via a bundle whose entry list is
@@ -139,9 +137,7 @@ class TestSummarizerReferences:
             }
             for i in range(50)
         ]
-        bundle = _parse_bundle(
-            {"resourceType": "Bundle", "type": "collection", "entry": entries}
-        )
+        bundle = _parse_bundle({"resourceType": "Bundle", "type": "collection", "entry": entries})
         summary = summarize_bundle(bundle)
         assert len(summary["references"]) <= NODE_CAP
 

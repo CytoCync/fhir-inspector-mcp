@@ -52,16 +52,12 @@ class TestGenerateOverrides:
         assert parsed["gender"] == "male"
 
     def test_dotted_path_override(self) -> None:
-        result = generate_example(
-            "Patient", version="R4", overrides={"name.0.family": "Override"}
-        )
+        result = generate_example("Patient", version="R4", overrides={"name.0.family": "Override"})
         parsed = json.loads(result["data"]["resource"])
         assert parsed["name"][0]["family"] == "Override"
 
     def test_bad_override_returns_generation_failed(self) -> None:
-        result = generate_example(
-            "Patient", version="R4", overrides={"name.99.family": "X"}
-        )
+        result = generate_example("Patient", version="R4", overrides={"name.99.family": "X"})
         assert result["success"] is False
         assert any(i["code"] == "E_GENERATION_FAILED" for i in result["issues"])
 

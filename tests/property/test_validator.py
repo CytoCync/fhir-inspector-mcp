@@ -50,9 +50,7 @@ class TestValidStaysValid:
 
 class TestErrorsHavePaths:
     def test_invalid_resource_issues_carry_paths(self) -> None:
-        model, issues = parse_resource(
-            json.dumps(factories.patient_missing_required()), "R4"
-        )
+        model, issues = parse_resource(json.dumps(factories.patient_missing_required()), "R4")
         assert model is None
         assert len(issues) >= 1
         for issue in issues:
@@ -61,9 +59,7 @@ class TestErrorsHavePaths:
             assert issue.code == "E_VALIDATION_FAILED"
 
     def test_invalid_code_issues_have_codes(self) -> None:
-        model, issues = parse_resource(
-            json.dumps(factories.make_patient(gender=["x"])), "R4"
-        )
+        model, issues = parse_resource(json.dumps(factories.make_patient(gender=["x"])), "R4")
         assert model is None
         assert all(i.code.startswith("E_") for i in issues)
 

@@ -26,12 +26,12 @@ class TestGenerateInstanceHappyPath:
         assert issues == []
 
     def test_patient_r5(self) -> None:
-        instance, validated, issues = generate_instance("Patient", "R5")
+        instance, validated, _issues = generate_instance("Patient", "R5")
         assert instance["resourceType"] == "Patient"
         assert validated is True
 
     def test_observation_r4(self) -> None:
-        instance, validated, issues = generate_instance("Observation", "R4")
+        instance, validated, _issues = generate_instance("Observation", "R4")
         assert instance["resourceType"] == "Observation"
         assert validated is True
         assert "status" in instance
@@ -63,13 +63,13 @@ class TestGenerateInstanceHappyPath:
 
 class TestGenerateInstanceUnknownType:
     def test_unknown_type_returns_issues(self) -> None:
-        instance, validated, issues = generate_instance("Patint", "R4")
+        _instance, validated, issues = generate_instance("Patint", "R4")
         assert validated is False
         assert len(issues) >= 1
         assert issues[0].code == "E_UNKNOWN_RESOURCE_TYPE"
 
     def test_injection_type_rejected(self) -> None:
-        instance, validated, issues = generate_instance("Patient;drop", "R4")
+        _instance, validated, issues = generate_instance("Patient;drop", "R4")
         assert validated is False
         assert issues[0].code == "E_UNKNOWN_RESOURCE_TYPE"
 
@@ -116,7 +116,7 @@ class TestGenerateInstanceWithOverrides:
         assert validated is True, issues
 
     def test_bad_override_returns_generation_failed(self) -> None:
-        instance, validated, issues = generate_instance(
+        _instance, validated, issues = generate_instance(
             "Patient", "R4", overrides={"name.99.family": "X"}
         )
         assert validated is False
@@ -130,6 +130,6 @@ class TestGenerationAttemptCap:
     def test_generation_terminates(self) -> None:
         # S-11: generation must always terminate within the attempt cap.
         for resource_type in ("Patient", "Observation", "Organization", "Bundle"):
-            instance, validated, issues = generate_instance(resource_type, "R4")
+            instance, validated, _issues = generate_instance(resource_type, "R4")
             assert isinstance(instance, dict)
             assert isinstance(validated, bool)

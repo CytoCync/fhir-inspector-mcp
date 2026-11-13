@@ -9,7 +9,6 @@ import pytest
 from fhir_inspector_mcp.tools import generate_example, inspect_resource, validate_resource
 from tests import factories
 
-
 R5_TYPES = ["Patient", "Observation", "Organization", "Practitioner", "Bundle"]
 
 

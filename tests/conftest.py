@@ -23,20 +23,23 @@ VERSIONS = ["R4", "R5"]
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
-    """Parametrize any test that declares a ``version`` fixture over R4 and R5."""
     """Parametrize any test that declares a ``version`` fixture over R4 and R5.
 
     Tests that explicitly parametrize ``version`` themselves (e.g. via
     @pytest.mark.parametrize) are left alone.
     """
-    if "version" in metafunc.fixturenames and "version" not in metafunc.params:
-        metafunc.parametrize("version", VERSIONS, ids=VERSIONS)
+    if "version" not in metafunc.fixturenames:
+        return
+    for mark in metafunc.definition.iter_markers(name="parametrize"):
+        argnames = mark.args[0] if mark.args else mark.kwargs.get("argnames", "")
+        names = [n.strip() for n in str(argnames).split(",")]
+        if "version" in names:
+            return
+    metafunc.parametrize("version", VERSIONS, ids=VERSIONS)
 
 
 @pytest.fixture
 def version() -> str:
-    """Placeholder so the parametrization above has a name to bind to."""
-    return "R4"
     """Placeholder so the parametrization above has a name to bind to."""
     return "R4"
 

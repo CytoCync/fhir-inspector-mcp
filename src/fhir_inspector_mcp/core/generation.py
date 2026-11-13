@@ -199,7 +199,10 @@ def _one_of_many_groups(model_cls: type[BaseModel]) -> dict[str, list[str]]:
     """
     try:
         instance = model_cls.model_construct()
-        groups = instance.get_one_of_many_fields()
+        # get_one_of_many_fields is a fhir.resources hook, not on BaseModel;
+        # resolve it dynamically so mypy does not flag attr-defined.
+        hook = getattr(instance, "get_one_of_many_fields", None)
+        groups = hook() if callable(hook) else {}
     except Exception:  # noqa: BLE001 - optional hook; absence means no choice groups
         return {}
     return groups if isinstance(groups, dict) else {}
@@ -244,9 +247,12 @@ def _fill_required(model_cls: type[BaseModel]) -> dict[str, Any]:
             continue
         # Check both is_required() and element_required for true cardinality:
         # fhir.resources marks FHIR-required fields Optional with default=None.
-        extra = info.json_schema_extra or {}
+        # json_schema_extra may be a Callable per pydantic's type stubs; only
+        # dict extras carry the element_required flag.
+        extra = info.json_schema_extra
+        extra_dict = extra if isinstance(extra, dict) else {}
         is_rq = info.is_required()
-        elem_rq = bool(extra.get("element_required", False))
+        elem_rq = bool(extra_dict.get("element_required", False))
         if not is_rq and not elem_rq:
             continue
         value = _field_example(info, package, owner_module)

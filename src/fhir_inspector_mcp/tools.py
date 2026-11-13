@@ -14,6 +14,7 @@ from fhir_inspector_mcp.core.parser import parse_resource
 from fhir_inspector_mcp.core.registry import RegistryError, normalize_version
 from fhir_inspector_mcp.core.summarizer import EntryLimitExceeded
 from fhir_inspector_mcp.core.summarizer import summarize_bundle as _summarize_bundle
+from fhir_inspector_mcp.core.validation import validate_model
 from fhir_inspector_mcp.models import (
     DEFAULT_FHIR_VERSION,
     E_ENTRY_LIMIT,
@@ -60,7 +61,12 @@ def _respond(
 
 
 def _resolve_version(version: str | None, issues: list[Issue]) -> str:
-    """Normalize the version; None means the caller took the default (warning)."""
+    """Normalize the version; None means the caller took the default (warning).
+
+    The warning is appended to ``issues`` here, but callers must return only the
+    fatal issues when a later step fails, so a real error is never preceded by
+    an informational W_VERSION_ASSUMED in the envelope.
+    """
     if version is None:
         issues.append(
             Issue(
@@ -119,13 +125,16 @@ def inspect_resource(
         resolved = _resolve_version(version, issues)
     except RegistryError as exc:
         return _respond(
-            start, None, [Issue(severity="error", code=exc.code, path=None, message=exc.message)], DEFAULT_FHIR_VERSION
+            start,
+            None,
+            [Issue(severity="error", code=exc.code, path=None, message=exc.message)],
+            DEFAULT_FHIR_VERSION,
         )
 
     model, parse_issues = parse_resource(resource, resolved)
     if parse_issues:
-        issues.extend(parse_issues)
-        return _respond(start, None, issues, resolved)
+        # Fatal parse failure: report the real error, not the version warning.
+        return _respond(start, None, parse_issues, resolved)
 
     assert model is not None
     depth = max(1, min(int(max_depth), MAX_INSPECT_DEPTH))
@@ -183,19 +192,28 @@ def validate_resource(resource: str, version: str | None = None) -> dict[str, An
     try:
         resolved = _resolve_version(version, issues)
     except RegistryError as exc:
-        return _respond(start, None, [Issue(severity="error", code=exc.code, path=None, message=exc.message)], DEFAULT_FHIR_VERSION)
+        return _respond(
+            start,
+            None,
+            [Issue(severity="error", code=exc.code, path=None, message=exc.message)],
+            DEFAULT_FHIR_VERSION,
+        )
 
     model, parse_issues = parse_resource(resource, resolved)
     if parse_issues:
-        issues.extend(parse_issues)
-        return _respond(start, None, issues, resolved)
+        # Fatal parse failure: report the real error, not the version warning.
+        return _respond(start, None, parse_issues, resolved)
 
     assert model is not None
     valid, validation_issues = validate_model(model)
     issues.extend(validation_issues)
     error_count = sum(1 for i in issues if i.severity == "error")
     warning_count = sum(1 for i in issues if i.severity == "warning")
-    data = {"valid": valid and not parse_issues, "error_count": error_count, "warning_count": warning_count}
+    data = {
+        "valid": valid and not parse_issues,
+        "error_count": error_count,
+        "warning_count": warning_count,
+    }
     return _respond(start, data, issues, resolved, resource_type=type(model).__name__)
 
 
@@ -224,12 +242,17 @@ def summarize_bundle(
     try:
         resolved = _resolve_version(version, issues)
     except RegistryError as exc:
-        return _respond(start, None, [Issue(severity="error", code=exc.code, path=None, message=exc.message)], DEFAULT_FHIR_VERSION)
+        return _respond(
+            start,
+            None,
+            [Issue(severity="error", code=exc.code, path=None, message=exc.message)],
+            DEFAULT_FHIR_VERSION,
+        )
 
     model, parse_issues = parse_resource(bundle, resolved)
     if parse_issues:
-        issues.extend(parse_issues)
-        return _respond(start, None, issues, resolved)
+        # Fatal parse failure: report the real error, not the version warning.
+        return _respond(start, None, parse_issues, resolved)
 
     assert model is not None
     if type(model).__name__ != "Bundle":
@@ -290,13 +313,19 @@ def generate_example(
     try:
         resolved = _resolve_version(version, issues)
     except RegistryError as exc:
-        return _respond(start, None, [Issue(severity="error", code=exc.code, path=None, message=exc.message)], DEFAULT_FHIR_VERSION)
+        return _respond(
+            start,
+            None,
+            [Issue(severity="error", code=exc.code, path=None, message=exc.message)],
+            DEFAULT_FHIR_VERSION,
+        )
 
     data_dict, validated, gen_issues = generate_instance(resource_type, resolved, overrides)
-    issues.extend(gen_issues)
     if not validated:
-        return _respond(start, None, issues, resolved, resource_type=resource_type)
+        # Fatal generation failure: report the real error, not the version warning.
+        return _respond(start, None, gen_issues, resolved, resource_type=resource_type)
 
+    issues.extend(gen_issues)
     data = {
         "resource_type": resource_type,
         "fhir_version": resolved,

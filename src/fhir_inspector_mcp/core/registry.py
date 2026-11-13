@@ -109,7 +109,7 @@ def resolve_model(version: str, resource_type: str) -> type[BaseModel]:
             "E_UNKNOWN_RESOURCE_TYPE",
             f"{resource_type!r} is not a FHIR resource class in FHIR {normalized}",
         )
-    return model  # type: ignore[return-value]
+    return model
 
 
 def is_bundle_type(resource_type: str | None) -> bool:

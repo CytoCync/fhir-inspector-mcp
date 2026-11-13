@@ -12,7 +12,7 @@ class EntryLimitExceeded(Exception):
 
 def _iter_model(model: BaseModel) -> Any:
     """Yield (name, value) for populated fields, skipping __ext and comments."""
-    for name in type(model).model_fields.keys():
+    for name in type(model).model_fields:
         if "__ext" in name or name == "fhir_comments":
             continue
         value = getattr(model, name, None)
@@ -68,21 +68,22 @@ def summarize_bundle(
     visited: set[int] = set()
 
     for index, entry in enumerate(work):
+        # Count the request method first: batch/transaction entries may carry a
+        # request with no resource, and the method must still be counted.
+        req = entry.request
+        if req is not None and req.method is not None:
+            request_method_counts[str(req.method)] += 1
+
         resource = entry.resource
         if resource is None:
             continue
         rtype = getattr(resource, "__resource_type__", "unknown")
         resource_type_counts[rtype] += 1
         contained_count += len(
-            resource.model_dump(by_alias=True, exclude_none=True).get("contained", [])
-            or []
+            resource.model_dump(by_alias=True, exclude_none=True).get("contained", []) or []
         )
         if include_references:
             _collect_refs(resource, references, visited, f"entry[{index}].resource")
-
-        req = entry.request
-        if req is not None and req.method is not None:
-            request_method_counts[str(req.method)] += 1
 
     return {
         "bundle_type": str(bundle.type) if bundle.type else None,

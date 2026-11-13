@@ -13,7 +13,6 @@ import pytest
 from fhir_inspector_mcp.tools import summarize_bundle
 from tests import factories
 
-
 ALL_BUNDLE_TYPES = [
     "transaction",
     "batch",
@@ -44,17 +43,13 @@ def test_all_bundle_types_accepted(bundle_type: str) -> None:
 
 
 def test_transaction_request_methods_counted() -> None:
-    result = summarize_bundle(
-        json.dumps(factories.make_transaction_bundle(3)), version="R4"
-    )
+    result = summarize_bundle(json.dumps(factories.make_transaction_bundle(3)), version="R4")
     assert result["data"]["request_method_counts"].get("POST") == 3
 
 
 def test_searchset_no_request_methods() -> None:
     # Only transaction/batch bundles carry entry.request.method.
-    result = summarize_bundle(
-        json.dumps(factories.make_searchset_bundle(3, total=3)), version="R4"
-    )
+    result = summarize_bundle(json.dumps(factories.make_searchset_bundle(3, total=3)), version="R4")
     assert result["data"]["request_method_counts"] == {}
 
 
@@ -65,18 +60,14 @@ def test_collection_bundle() -> None:
 
 
 def test_document_bundle_composition() -> None:
-    result = summarize_bundle(
-        json.dumps(factories.make_document_bundle(2)), version="R4"
-    )
+    result = summarize_bundle(json.dumps(factories.make_document_bundle(2)), version="R4")
     counts = result["data"]["resource_type_counts"]
     assert counts.get("Composition") == 1
     assert counts.get("Patient") == 2
 
 
 def test_r5_bundle_types() -> None:
-    result = summarize_bundle(
-        json.dumps(factories.make_transaction_bundle(2)), version="R5"
-    )
+    result = summarize_bundle(json.dumps(factories.make_transaction_bundle(2)), version="R5")
     assert result["success"] is True
     assert result["data"]["bundle_type"] == "transaction"
 
