@@ -111,6 +111,20 @@ class TestParseResourceGuardrails:
         assert model is not None
         assert issues == []
 
+    def test_depth_one_past_boundary_rejected(self) -> None:
+        # Companion to the boundary test: one more Extension level than the
+        # deepest passing payload must trip E_DEPTH_EXCEEDED through the same
+        # parse_resource path. This proves the boundary test sits exactly on the
+        # edge (isolating check_depth) rather than comfortably below it.
+        n = (MAX_DEPTH - 4) // 2 + 1
+        node: dict[str, Any] = {"url": "http://example.org/ext"}
+        for _ in range(n):
+            node = {"url": "http://example.org/ext", "extension": [node]}
+        obj: dict[str, Any] = {"resourceType": "Patient", "extension": [node]}
+        model, issues = parse_resource(json.dumps(obj), "R4")
+        assert model is None
+        assert issues[0].code == "E_DEPTH_EXCEEDED"
+
 
 class TestParseResourceResourceType:
     def test_missing_resource_type(self) -> None:
