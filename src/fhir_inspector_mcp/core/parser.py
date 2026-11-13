@@ -3,6 +3,7 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from fhir_inspector_mcp.core.limits import (
+    MAX_DEPTH,
     GuardrailExceeded,
     check_depth,
     check_json_parses,
@@ -19,16 +20,21 @@ from fhir_inspector_mcp.models import (
 
 
 def _loc_to_path(loc: tuple[Any, ...]) -> str:
+    """Render a pydantic error ``loc`` as a dotted FHIR path.
+
+    Integer locs become ``[i]`` and attach to the preceding segment, so
+    ``("name", 0, "family")`` -> ``name[0].family``.
+    """
     parts: list[str] = []
     for item in loc:
         if isinstance(item, int):
-            parts.append(f"[{item}]")
-        else:
-            if parts and parts[-1].startswith("["):
-                parts[-1] = f"{parts[-1][:-1]}.{item}]"
+            if parts:
+                parts[-1] = f"{parts[-1]}[{item}]"
             else:
-                parts.append(str(item))
-    return "".join(parts) or None  # type: ignore[return-value]
+                parts.append(f"[{item}]")
+        else:
+            parts.append(str(item))
+    return ".".join(parts) or None  # type: ignore[return-value]
 
 
 def validation_issues(exc: ValidationError) -> list[Issue]:
@@ -56,16 +62,12 @@ def parse_resource(raw: str, version: str) -> tuple[BaseModel | None, list[Issue
     try:
         check_payload_size(raw)
     except GuardrailExceeded as exc:
-        return None, [
-            Issue(severity="error", code=exc.code, path=None, message=exc.detail)
-        ]
+        return None, [Issue(severity="error", code=exc.code, path=None, message=exc.detail)]
 
     try:
         data = check_json_parses(raw)
     except GuardrailExceeded as exc:
-        return None, [
-            Issue(severity="error", code=exc.code, path=None, message=exc.detail)
-        ]
+        return None, [Issue(severity="error", code=exc.code, path=None, message=exc.detail)]
 
     if not isinstance(data, dict):
         return None, [
@@ -78,11 +80,9 @@ def parse_resource(raw: str, version: str) -> tuple[BaseModel | None, list[Issue
         ]
 
     try:
-        check_depth(data)
+        check_depth(data, MAX_DEPTH)
     except GuardrailExceeded as exc:
-        return None, [
-            Issue(severity="error", code=exc.code, path=None, message=exc.detail)
-        ]
+        return None, [Issue(severity="error", code=exc.code, path=None, message=exc.detail)]
 
     resource_type = data.get("resourceType")
     if not isinstance(resource_type, str) or not resource_type:
@@ -107,6 +107,10 @@ def parse_resource(raw: str, version: str) -> tuple[BaseModel | None, list[Issue
     except ValidationError as exc:
         return None, validation_issues(exc)
 
+    # fhir.resources models expose the type via the class attribute
+    # ``__resource_type__``; instances do not carry a ``resourceType`` attribute
+    # (extra='forbid'), so expose it for callers that read it off the model.
+    object.__setattr__(model, "resourceType", getattr(model_cls, "__resource_type__", "Unknown"))
     return model, []
 
 
