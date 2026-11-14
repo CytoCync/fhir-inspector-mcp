@@ -1,4 +1,1 @@
-from fhir_inspector_mcp.server import main
-
-if __name__ == "__main__":
-    main()
+from fhir_inspector_mcp.server import main 
