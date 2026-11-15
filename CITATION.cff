@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "FHIR Inspector MCP"
+authors:
+  - given-names: "Curtis"
+    family-names: "Szmania"
+    affiliation: "CytoCync"
+version: 1.0.0
+date-released: "2026-11-11"
+license: MIT
+repository-code: "https://github.com/CytoCync/fhir-inspector-mcp"
+abstract: "A zero-cost Model Context Protocol (MCP) server for inspecting, validating, summarizing, and generating FHIR R4/R5 resources."
+keywords:
+  - fhir
+  - mcp
+  - healthcare
+  - hl7
+  - model-context-protocol

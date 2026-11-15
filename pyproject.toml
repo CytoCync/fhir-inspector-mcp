@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fhir-inspector-mcp"
-version = "0.0.1"
+version = "1.0.0"
 description = "Zero-cost MCP server to inspect, validate, summarize, and generate FHIR R4/R5 resources"
 readme = "README.md"
 license = { text = "MIT" }
