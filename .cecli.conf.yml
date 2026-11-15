@@ -1,0 +1,36 @@
+read:
+rules:
+  - "C:/Users/PDitty/.cecli/.cecli.mcp.servers.cytocync.md"
+  - "C:/Users/PDitty/.cecli/mcp/.cecli.mcp.servers.images.md"
+  - "C:/Users/PDitty/.cecli/mcp/.cecli.mcp.servers.web.md"
+  - "C:/Users/PDitty/.cecli/skills/web/.cecli.skills.md"
+  - "C:/Users/PDitty/.cecli/tools/web/.cecli.tools.md"
+#load: "C:/Users/PDitty/.cecli.commands.local"
+attribute-author: false
+attribute-committer: false
+attribute-commit-message-committer: false
+attribute-co-authored-by: false
+lint-cmd: "venv\\Scripts\\ruff format . && venv\\Scripts\\ruff check --fix . && venv\\Scripts\\mypy src\\fhir_inspector_mcp && venv\\Scripts\\pip-audit"
+auto-lint: false
+test-cmd: "venv\\Scripts\\pytest tests"
+auto-test: false
+notifications: true
+notifications-command: "powershell -c \"Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Cecli - fhir-inspector-mcp - is waiting for your input!', 'Cecli - fhir-inspector-mcp')\""
+mcp-servers-files:
+  - "C:/Users/PDitty/.cecli/.cecli.mcp.servers.cytocync.json"
+  - "C:/Users/PDitty/.cecli/mcp/.cecli.mcp.servers.images.json"
+  - "C:/Users/PDitty/.cecli/mcp/.cecli.mcp.servers.web.json"
+agent-config:
+  skills_paths:
+    - "C:/Users/PDitty/.cecli/skills/backend"
+    - "C:/Users/PDitty/.cecli/skills/frontend"
+    - "C:/Users/PDitty/.cecli/skills/media"
+    - "C:/Users/PDitty/.cecli/skills/web"
+    - "./skills"
+#  skills_includelist: []
+#  skills_excludelist: []
+  tools_paths:
+    - "C:/Users/PDitty/.cecli/tools/web"
+#  tools_includelist: []
+#  tools_excludelist: []
+  subagent_paths:
