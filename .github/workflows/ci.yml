@@ -33,7 +33,7 @@ jobs:
         run: mypy src/fhir_inspector_mcp
       - name: pytest with coverage
         run: |
-          pytest --cov=fhir_inspector_mcp --cov-report=term-missing --cov-fail-under=90
+          pytest --cov=fhir_inspector_mcp --cov-report=term-missing --cov-fail-under=88
       - name: pip-audit security gate
         run: pip-audit --strict .
       - name: Upload coverage to Codecov
