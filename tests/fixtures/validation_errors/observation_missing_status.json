@@ -1,0 +1,10 @@
+{
+  "resourceType": "Observation",
+  "id": "example",
+  "code": {
+    "coding": [
+      { "system": "http://example.org", "code": "example" }
+    ]
+  }
+}
+  

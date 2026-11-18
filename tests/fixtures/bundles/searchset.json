@@ -1,0 +1,9 @@
+{
+  "resourceType": "Bundle",
+  "type": "searchset",
+  "total": 10,
+  "entry": [
+    { "resource": { "resourceType": "Patient", "id": "example-0" } },
+    { "resource": { "resourceType": "Patient", "id": "example-1" } }
+  ]
+}

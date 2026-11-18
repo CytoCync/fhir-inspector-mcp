@@ -1,0 +1,12 @@
+fastmcp==4.1.6
+fhir-resources==8.3.0
+pydantic<3,>=2
+
+[dev]
+pytest
+pytest-cov
+pytest-asyncio
+ruff
+mypy
+pip-audit
+pre-commit

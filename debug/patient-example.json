@@ -1,0 +1,5 @@
+{
+  "resourceType": "Patient",
+  "deceasedBoolean": true,
+  "multipleBirthBoolean": true
+}
