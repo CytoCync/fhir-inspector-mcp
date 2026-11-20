@@ -34,7 +34,6 @@ theme:
     text: Roboto
     code: Roboto Mono
   logo: assets/cytocync-logo.svg
-  favicon: assets/favicon.ico
 
 extra:
   social:
@@ -46,9 +45,6 @@ extra:
       name: CytoCync on LinkedIn
   footer:
     - "Built with ❤️ by <a href='https://cytocync.com' target='_blank' rel='noopener noreferrer'>CytoCync</a>"
-  analytics:
-    provider: google
-    property: G-XXXXXXXXXX
   version:
     provider: mike
 
