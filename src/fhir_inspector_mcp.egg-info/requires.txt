@@ -1,5 +1,9 @@
 fastmcp==4.1.6
 fhir-resources==8.3.0
+mkdocs-git-authors-plugin>=0.10.0
+mkdocs-git-revision-date-localized-plugin>=1.7.0
+mkdocs-material>=9.8.2
+mkdocs-minify-plugin>=0.8.0
 pydantic<3,>=2
 
 [dev]

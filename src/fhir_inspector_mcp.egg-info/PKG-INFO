@@ -1,13 +1,17 @@
 Metadata-Version: 2.4
 Name: fhir-inspector-mcp
-Version: 0.0.1
-Summary: Zero-cost MCP server to inspect, validate, summarize, and generate FHIR R4/R5 resources
+Version: 0.0.6
+Summary: Zero-cost MCP server to inspect, validate, summarize, and generate FHIR R4/R5 resources from CytoCync
 License: MIT
 Requires-Python: >=3.12
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: fastmcp==4.1.6
 Requires-Dist: fhir-resources==8.3.0
+Requires-Dist: mkdocs-git-authors-plugin>=0.10.0
+Requires-Dist: mkdocs-git-revision-date-localized-plugin>=1.7.0
+Requires-Dist: mkdocs-material>=9.8.2
+Requires-Dist: mkdocs-minify-plugin>=0.8.0
 Requires-Dist: pydantic<3,>=2
 Provides-Extra: dev
 Requires-Dist: pytest; extra == "dev"

@@ -79,3 +79,44 @@ uv run fhir-inspector-mcp
 ```
 
 This will start the server in stdio mode, allowing your MCP client (e.g., Claude Desktop, Cursor, VS Code with MCP Extension) to connect and interact with the FHIR inspection tools.
+
+## 7. Project Structure
+
+```
+src/fhir_inspector_mcp/
+├── __main__.py          # Entry point
+├── server.py            # FastMCP server setup
+├── tools.py             # 4 @mcp.tool wrappers
+├── models.py            # Response envelope & Issue models
+└── core/
+    ├── __init__.py
+    ├── limits.py        # Guardrail constants
+    ├── registry.py      # Version/type resolution
+    ├── parser.py        # JSON parsing + validation
+    ├── inspection.py    # Element tree extraction
+    ├── validation.py    # Validation wrapper
+    ├── summarizer.py    # Bundle summarization
+    └── generation.py    # Example generation
+```
+
+See the [Architecture overview](../architecture/overview.md) for how these modules interact.
+
+## 8. Building the Documentation
+
+The documentation site is built with MkDocs Material:
+
+```bash
+# Install documentation dependencies
+pip install mkdocs-material mkdocs-git-revision-date-localized-plugin mkdocs-git-authors-plugin mkdocs-minify-plugin
+
+# Serve locally with live reload
+mkdocs serve
+
+# Build the static site
+mkdocs build
+```
+
+## Next Steps
+
+- [Testing guide](testing.md) — test structure and coverage targets
+- [Contributing guide](contributing.md) — workflow and pull request process
