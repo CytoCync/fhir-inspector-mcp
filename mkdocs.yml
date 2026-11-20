@@ -1,0 +1,116 @@
+site_name: FHIR Inspector MCP
+site_url: https://cytocync.github.io/fhir-inspector-mcp/
+repo_url: https://github.com/CytoCync/fhir-inspector-mcp
+repo_name: CytoCync/fhir-inspector-mcp
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2026 CytoCync
+
+theme:
+  name: material
+  custom_dir: overrides
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  logo: assets/cytocync-logo.svg
+  favicon: assets/favicon.ico
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/CytoCync
+      name: CytoCync on GitHub
+    - icon: fontawesome/brands/linkedin
+      link: https://linkedin.com/company/cytocync
+      name: CytoCync on LinkedIn
+  footer:
+    - "Built with ❤️ by <a href='https://cytocync.com' target='_blank' rel='noopener noreferrer'>CytoCync</a>"
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX
+  version:
+    provider: mike
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+  - git-authors:
+      exclude:
+        - dependabot[bot]
+        - github-actions[bot]
+  - minify:
+      minify_html: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quickstart: getting-started/quickstart.md
+      - Configuration: getting-started/configuration.md
+  - Tools:
+      - inspect_resource: tools/inspect_resource.md
+      - validate_resource: tools/validate_resource.md
+      - summarize_bundle: tools/summarize_bundle.md
+      - generate_example: tools/generate_example.md
+  - Guides:
+      - Development: guides/development.md
+      - Testing: guides/testing.md
+      - Contributing: guides/contributing.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - ADRs:
+          - FHIR Library Choice: architecture/adr/001-fhir-library-choice.md
+          - MCP Framework Choice: architecture/adr/002-mcp-framework-choice.md
+          - Synthetic Data Strategy: architecture/adr/003-synthetic-data-strategy.md
+  - Troubleshooting: troubleshooting.md
+  - Contributing: contributing.md
