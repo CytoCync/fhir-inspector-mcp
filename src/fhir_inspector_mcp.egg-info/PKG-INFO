@@ -496,15 +496,11 @@ uv run pytest tests/property/
 MIT License — see [LICENSE](LICENSE) for details.
 
 ## Contributing
-
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-See [docs/development.md](docs/development.md) for development setup, testing, and code quality instructions.
+See [docs/guides/development.md](docs/guides/development.md) for development setup, testing, and code quality instructions, and view the hosted documentation at https://cytocync.github.io/fhir-inspector-mcp/
 
 ---
-
-## Security
-
 This server:
 - Runs as stdio-only (no network listener)
 - Enforces 10 MB payload limit, 50-level depth limit, 10k bundle entry cap

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" width="220" height="60" role="img" aria-label="CytoCync">
+  <title>CytoCync</title>
+  <defs>
+    <linearGradient id="cc-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00529B"/>
+      <stop offset="100%" stop-color="#003D7A"/>
+    </linearGradient>
+  </defs>
+  <!-- Brand mark: hexagon cell motif in healthcare blues -->
+  <path d="M30 5 L51.7 17.5 L51.7 42.5 L30 55 L8.3 42.5 L8.3 17.5 Z" fill="url(#cc-grad)" stroke="#FFFFFF" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="30" cy="24.5" r="8.4" fill="#FFFFFF"/>
+  <circle cx="40.3" cy="36" r="5.6" fill="#FFFFFF" fill-opacity="0.85"/>
+  <circle cx="20.5" cy="37" r="4.6" fill="#FFFFFF" fill-opacity="0.7"/>
+  <!-- Wordmark: white for contrast on the primary-colored Material header -->
+  <text x="62" y="41" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="30" font-weight="700" fill="#FFFFFF">CytoCync</text>
+</svg>

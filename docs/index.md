@@ -99,7 +99,7 @@ Create valid FHIR resource examples for any resource type with optional field ov
 ## Architecture
 
 - [Overview](architecture/overview.md)
-- [ADRs](architecture/adr/)
+- [ADRs](architecture/adr/001-fhir-library-choice.md)
 
 ## Guides
 
