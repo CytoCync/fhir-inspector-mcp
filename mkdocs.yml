@@ -7,7 +7,7 @@ copyright: Copyright &copy; 2026 CytoCync
 
 theme:
   name: material
-  custom_dir: overrides
+  custom_dir: docs/overrides
   features:
     - navigation.tabs
     - navigation.sections
