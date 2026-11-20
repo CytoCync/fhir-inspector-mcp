@@ -2,12 +2,12 @@
 
 /* Banner styles */
 .md-banner {
-  background: linear-gradient(135deg, #3f51b5 0%, #5c6bc0 100%);
+  background: linear-gradient(135deg, #00529B 0%, #003D7A 100%);
   color: white;
   padding: 1rem 1.5rem;
   margin-bottom: 1.5rem;
   border-radius: 0.5rem;
-  box-shadow: 0 2px 8px rgba(63, 81, 181, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 82, 155, 0.3);
 }
 
 .md-banner__content {
@@ -44,7 +44,7 @@
 
 .md-banner__button {
   background: white;
-  color: #3f51b5;
+  color: #00529B;
   padding: 0.5rem 1.25rem;
   border-radius: 0.25rem;
   font-weight: 600;
@@ -55,7 +55,7 @@
 }
 
 .md-banner__button:hover {
-  background: #e8eaf6;
+  background: #E0F2F7;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -100,15 +100,15 @@
 
 /* Custom link styling */
 .md-typeset a {
-  color: #3f51b5;
+  color: #00529B;
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition: all 0.2s ease;
 }
 
 .md-typeset a:hover {
-  color: #5c6bc0;
-  border-bottom-color: #5c6bc0;
+  color: #00529B;
+  border-bottom-color: #00529B;
 }
 
 /* Custom header anchor */

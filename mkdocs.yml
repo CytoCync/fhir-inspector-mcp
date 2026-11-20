@@ -19,14 +19,14 @@ theme:
     - content.code.annotate
   palette:
     - scheme: default
-      primary: indigo
-      accent: indigo
+      primary: #00529B
+      accent: #003D7A
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - scheme: slate
-      primary: indigo
-      accent: indigo
+      primary: #00529B
+      accent: #003D7A
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
